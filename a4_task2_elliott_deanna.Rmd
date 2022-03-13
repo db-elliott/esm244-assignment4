@@ -1,5 +1,5 @@
 ---
-title: "Task 2 - Time Series Summary"
+title: "A Time Series Visualization for Willamette Falls Fish Ladder"
 author: "Deanna Elliott"
 output: 
   html_document:
