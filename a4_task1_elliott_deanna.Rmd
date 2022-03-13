@@ -1,0 +1,99 @@
+---
+title: "Task 1 - Spatial Data Visualization"
+author: "Deanna Elliott"
+date: "3/1/2022"
+output: 
+  html_document:
+    code_folding: hide
+---
+
+```{r setup, include=TRUE, message = FALSE, warning = FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(broom)
+library(sf)
+library(tmap)
+library(gstat)
+library(stars)
+```
+
+```{r}
+
+# read in spill site file
+
+spill_data_sf <- read_sf(here("data", "spill", "ds394.shp")) %>% 
+  janitor::clean_names()
+
+spill_site_sf <- spill_data_sf %>% 
+  select(city = localecity) #sticky geography 
+
+spill_site_df <- spill_site_sf %>% 
+  as.data.frame() %>% 
+  select(-geometry)
+
+# read in CA counties file
+
+ca_counties_sf <- read_sf(here("data", "spill", 
+                               "CA_Counties_TIGER2016.shp"))
+
+ca_subset_sf <- ca_counties_sf %>% 
+  janitor::clean_names() %>% 
+  select(county_name = name, land_area = aland)
+```
+
+```{r}
+ # check crs
+
+spill_site_sf %>% st_crs()
+ca_subset_sf %>% st_crs()
+
+ca_crs_sf <- st_transform(ca_subset_sf, st_crs(spill_site_sf))
+```
+
+```{r}
+tmap_mode(mode = 'view')
+
+tm_shape(ca_crs_sf) +
+  tm_borders(col = 'black') +
+  tm_shape(spill_site_sf) +
+  tm_dots(col = 'red')
+```
+
+**Figure 1. Oil spills in California.** This interactive map shows individual instances of both marine and inland oil spills throughout California in 2008.
+
+```{r}
+
+inland_spill_sf <- spill_data_sf %>% 
+   janitor::clean_names() %>% 
+  mutate(year = lubridate::year(dateofinci)) %>% 
+  select(year, inlandmari, localecoun) %>% 
+  filter(year == "2008", inlandmari == "Inland")
+```
+
+```{r}
+
+# find inland spills per county in 2008
+
+inland_crs_sf <- st_transform(inland_spill_sf, st_crs(ca_subset_sf))
+
+inland_join_sf <- ca_subset_sf %>% 
+  st_join(inland_crs_sf)
+
+inland_counts_sf <- inland_join_sf %>% 
+  group_by(localecoun) %>% 
+  summarize(n_records = sum(!is.na(inlandmari)))
+```
+
+```{r}
+
+ggplot(data = inland_counts_sf) +
+  geom_sf(aes(fill = n_records), color = 'white', size = 0.1) +
+  scale_fill_gradientn(colors = c('lightgrey', 'orange', 'red')) +
+  theme_void() +
+  labs(fill= 'Number of Oil Spills')
+```
+
+**Figure 2. Inland Oil Spills.** This map shows the number of inland oil spills in California, by county, for the year 2008.
+
