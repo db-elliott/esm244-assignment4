@@ -4,6 +4,7 @@ author: "Deanna Elliott"
 date: "3/1/2022"
 output: 
   html_document:
+    theme: spacelab
     code_folding: hide
 ---
 
@@ -18,6 +19,12 @@ library(tmap)
 library(gstat)
 library(stars)
 ```
+
+### Overview
+
+This report visualizes sites and counts of oil spills in California in 2008. Data from CA DFW Oil Spill Incident Tracking is used to create an interactive map of each spill site, and a second static map showing the number of spills per county.
+
+<br>
 
 ```{r}
 
@@ -65,6 +72,8 @@ tm_shape(ca_crs_sf) +
 
 **Figure 1. Oil spills in California.** This interactive map shows individual instances of both marine and inland oil spills throughout California in 2008.
 
+<br>
+
 ```{r}
 
 inland_spill_sf <- spill_data_sf %>% 
@@ -99,3 +108,8 @@ ggplot(data = inland_counts_sf) +
 
 **Figure 2. Inland Oil Spills.** This map shows the number of inland oil spills in California, by county, for the year 2008.
 
+<br>
+
+**Data Sources:** California County shapefile (ca_counties_tiger_2016.shp) from the US Census Bureau’s 2016 MAF/TIGER database (accessed [here](https://data.ca.gov/dataset/ca-geographic-boundaries/resource/b0007416-a325-4777-9295-368ea6b710e6?inner_span=True)).
+
+Oil spill data from California Department of Fish & Wildlife and the California State Geoportal - Oil Spill Incident Tracking [ds394] (accessed [here](https://gis.data.ca.gov/datasets/7464e3d6f4924b50ad06e5a553d71086_0/explore?location=36.977441%2C-119.422009%2C6.16&showTable=true)).

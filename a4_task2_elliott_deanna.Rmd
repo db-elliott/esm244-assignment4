@@ -98,14 +98,14 @@ ggplot(data = fish_daily,
 fish_month <- fish_ts %>% 
   group_by(species) %>% 
   index_by(yr_mo = ~ yearmonth(.)) %>% 
-  summarize(monthly_mean_passage = mean(count, na.rm = TRUE))
+  summarize(monthly_passage = sum(count, na.rm = TRUE))
 
 fish_month %>% 
-  gg_season(y = monthly_mean_passage,
+  gg_season(y = monthly_passage,
             pal = (viridis::turbo(10))) +
   geom_line(size = 1) +
   theme_minimal() +
-  labs(x = "Month", y = "Mean Passage Count")
+  labs(x = "Month", y = "Passage Count")
 ```
 
 **Figure 2. Monthly Average Passage.** Average counts for three species of fish--Coho, Jack Coho, and Steelhead--passing through the Willamette Falls fish ladder are shown monthly for the years 2001-2010.

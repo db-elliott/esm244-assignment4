@@ -2,7 +2,10 @@
 title: "Task 3 - Text Analysis"
 author: "Deanna Elliott"
 date: "3/13/2022"
-output: html_document
+output: 
+  html_document:
+    theme: spacelab
+    code_folding: hide
 ---
 
 ```{r setup, include=TRUE, message=FALSE, warning=FALSE}
@@ -13,8 +16,15 @@ library(here)
 library(tidytext)
 library(textdata)
 library(pdftools)
-library(ggwordcloud)
 ```
+
+### Overview
+
+This report explores the word count and sentimentality of the song *The Greatest Show on Earth* by Finnish symphonic metal Nightwish. The song is from their eighth studio album *Endless Forms Most Beautiful*, released in 2015, and chronicles the evolution of Earth. Text wrangling is used to find counts of the top 5 words in the song, and two sentiment lexicons are used to describe the overall tone of each movement of the song.
+
+**Text Source:** LyricFind.com
+
+<br>
 
 ### Text Wrangling
 
@@ -43,6 +53,11 @@ gsoe_mvmts <- gsoe_lines %>%
   mutate(movement = ifelse(str_detect(full_text, 'Movement'), full_text, NA)) %>%
   fill(movement, .direction = 'down') %>% 
   separate(col = movement, into = c('mvmt', 'no'), sep = " ")
+
+# the code won't recognize Movement 1; I tried multiple times, so instead...
+
+gsoe_mvmts$no[is.na(gsoe_mvmts$no)] <- 1
+
 ```
 
 ```{r}
@@ -77,15 +92,21 @@ top_5_words <- nonstop_count %>%
   ungroup()
 
 ggplot(data = top_5_words) +
-  geom_col(aes(x = n, y = word), fill = 'blue') +
-  facet_wrap(~no, scales = 'free')
+  geom_col(aes(x = n, y = reorder(word, -n)), fill = 'royalblue') +
+  labs(x = "Count", y = "Word") +
+  theme_minimal()
+  
 ```
+
+**Figure 1. Top words.** This graph ostensibly shows the top five words in the song *The Greatest Show on Earth* by Nightwish. Many words were repeated an equal number of times, so there are a total of 19 words that tie for top five.
+
+<br>
 
 ### Sentiment Analysis
 
 ```{r}
 
-get_sentiments(lexicon = 'afinn')
+afinn <- get_sentiments(lexicon = 'afinn')
 
 gsoe_afinn <- gsoe_words_clean %>% 
   inner_join(get_sentiments('afinn'), by = 'word')
@@ -96,36 +117,43 @@ gsoe_afinn <- gsoe_words_clean %>%
 afinn_counts <- gsoe_afinn %>% 
   count(no, value)
 
-ggplot(data = afinn_counts, aes(x = value, y = n))+
-  geom_col() +
-  facet_wrap(~no)
-
 afinn_means <- gsoe_afinn %>% 
   group_by(no) %>% 
   summarize(mean_afinn = mean(value))
 
 ggplot(data = afinn_means, 
-       aes(x = fct_rev(factor(no)), y = mean_afinn)) +
-  geom_col() +
-  coord_flip() +
+       aes(x = no, y = mean_afinn)) +
+  geom_col(fill = 'royalblue', color = 'black') +
   labs(x = "Movement", y = "Mean Afinn Value") +
   theme_minimal()
 ```
 
+**Figure 2. Afinn values by movement.** This graph shows the mean value of words in each of the song's four movements based on the Afinn sentiment lexicon. Higher values are associated with positive words. Movement 3 had a mean value of zero.
+
+<br>
 
 ```{r}
 
-get_sentiments(lexicon = 'nrc')
+nrc <- get_sentiments(lexicon = 'nrc')
 
 gsoe_nrc <- gsoe_words_clean %>% 
   inner_join(get_sentiments('nrc'))
+
+gsoe_nrc$no[is.na(gsoe_nrc$no)] <- 1
+
 
 gsoe_nrc_counts <- gsoe_nrc %>% 
   count(no, sentiment)
 
 ggplot(data = gsoe_nrc_counts,
        aes(x = no, y = n)) +
-  geom_col() +
+  geom_col(fill = 'royalblue', color = 'black') +
   facet_wrap(~sentiment) +
-  coord_flip()
+  theme_minimal() +
+  labs(x = 'Movement', y = 'Word Count')
 ```
+
+
+**Figure 3. Sentiments by movement.** The above graph shows the count of words per movement which are associated with 10 different emotions and/or sentiments. The analysis is based on the NRC sentiment lexicon.
+
+<br>
