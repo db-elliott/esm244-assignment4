@@ -1,0 +1,131 @@
+---
+title: "Task 3 - Text Analysis"
+author: "Deanna Elliott"
+date: "3/13/2022"
+output: html_document
+---
+
+```{r setup, include=TRUE, message=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
+
+library(tidyverse)
+library(here)
+library(tidytext)
+library(textdata)
+library(pdftools)
+library(ggwordcloud)
+```
+
+### Text Wrangling
+
+```{r}
+
+# read in text
+
+gsoe_text <- pdf_text(here("data", "gsoe_nightwish.pdf"))
+
+# break down into pages and lines
+
+gsoe_lines <- data.frame(gsoe_text) %>% 
+  mutate(page = 1:n()) %>% 
+  mutate(full_text = str_split(gsoe_text, pattern = '\\n')) %>% 
+  unnest(full_text) %>% 
+  mutate(full_text = str_squish(full_text))
+
+```
+
+```{r}
+
+# tidy: separate the movements
+
+gsoe_mvmts <- gsoe_lines %>% 
+  slice(-(0:8)) %>% 
+  mutate(movement = ifelse(str_detect(full_text, 'Movement'), full_text, NA)) %>%
+  fill(movement, .direction = 'down') %>% 
+  separate(col = movement, into = c('mvmt', 'no'), sep = " ")
+```
+
+```{r}
+
+# word counts
+
+gsoe_words <- gsoe_mvmts %>% 
+  unnest_tokens(word, full_text, token = 'words') %>% 
+  select(-gsoe_text)
+
+gsoe_wordcount <- gsoe_words %>% 
+  count(mvmt, no, word)
+
+# get rid of stop words
+
+gsoe_words_clean <- gsoe_words %>% 
+  anti_join(stop_words, by = 'word')
+
+nonstop_count <- gsoe_words_clean %>% 
+  count(mvmt, no, word)
+
+```
+
+```{r}
+
+# find top 5 words in whole song
+
+top_5_words <- nonstop_count %>% 
+  group_by(no) %>% 
+  arrange(-n) %>% 
+  slice(1:5) %>% 
+  ungroup()
+
+ggplot(data = top_5_words) +
+  geom_col(aes(x = n, y = word), fill = 'blue') +
+  facet_wrap(~no, scales = 'free')
+```
+
+### Sentiment Analysis
+
+```{r}
+
+get_sentiments(lexicon = 'afinn')
+
+gsoe_afinn <- gsoe_words_clean %>% 
+  inner_join(get_sentiments('afinn'), by = 'word')
+```
+
+```{r}
+
+afinn_counts <- gsoe_afinn %>% 
+  count(no, value)
+
+ggplot(data = afinn_counts, aes(x = value, y = n))+
+  geom_col() +
+  facet_wrap(~no)
+
+afinn_means <- gsoe_afinn %>% 
+  group_by(no) %>% 
+  summarize(mean_afinn = mean(value))
+
+ggplot(data = afinn_means, 
+       aes(x = fct_rev(factor(no)), y = mean_afinn)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Movement", y = "Mean Afinn Value") +
+  theme_minimal()
+```
+
+
+```{r}
+
+get_sentiments(lexicon = 'nrc')
+
+gsoe_nrc <- gsoe_words_clean %>% 
+  inner_join(get_sentiments('nrc'))
+
+gsoe_nrc_counts <- gsoe_nrc %>% 
+  count(no, sentiment)
+
+ggplot(data = gsoe_nrc_counts,
+       aes(x = no, y = n)) +
+  geom_col() +
+  facet_wrap(~sentiment) +
+  coord_flip()
+```
