@@ -26,6 +26,8 @@ This report visualizes sites and counts of oil spills in California in 2008. Dat
 
 <br>
 
+#### Oil Spill Sites in CA
+
 ```{r}
 
 # read in spill site file
@@ -73,6 +75,8 @@ tm_shape(ca_crs_sf) +
 **Figure 1. Oil spills in California.** This interactive map shows individual instances of both marine and inland oil spills throughout California in 2008.
 
 <br>
+
+#### Inland Oil Spills Per CA County 
 
 ```{r}
 
