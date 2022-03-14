@@ -53,8 +53,8 @@ ca_subset_sf <- ca_counties_sf %>%
 ```{r}
  # check crs
 
-spill_site_sf %>% st_crs()
-ca_subset_sf %>% st_crs()
+spill_crs <- spill_site_sf %>% st_crs()
+ca_crs <- ca_subset_sf %>% st_crs()
 
 ca_crs_sf <- st_transform(ca_subset_sf, st_crs(spill_site_sf))
 ```
